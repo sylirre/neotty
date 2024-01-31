@@ -1,0 +1,23 @@
+diff -uNr qemu-7.0.0/meson.build qemu-7.0.0.mod/meson.build
+--- qemu-7.0.0/meson.build	2022-07-09 21:08:17.542772924 +0300
++++ qemu-7.0.0.mod/meson.build	2022-07-09 21:10:11.727767113 +0300
+@@ -1432,17 +1432,8 @@
+            error_message: '-display dbus requires gdbus-codegen') \
+   .allowed()
+ 
+-have_virtfs = get_option('virtfs') \
+-    .require(targetos == 'linux' or targetos == 'darwin',
+-             error_message: 'virtio-9p (virtfs) requires Linux or macOS') \
+-    .require(targetos == 'linux' or cc.has_function('pthread_fchdir_np'),
+-             error_message: 'virtio-9p (virtfs) on macOS requires the presence of pthread_fchdir_np') \
+-    .require(targetos == 'darwin' or (libattr.found() and libcap_ng.found()),
+-             error_message: 'virtio-9p (virtfs) on Linux requires libcap-ng-devel and libattr-devel') \
+-    .disable_auto_if(not have_tools and not have_system) \
+-    .allowed()
+-
+-have_virtfs_proxy_helper = targetos != 'darwin' and have_virtfs and have_tools
++have_virtfs = true
++have_virtfs_proxy_helper = false
+ 
+ foreach k : get_option('trace_backends')
+   config_host_data.set('CONFIG_TRACE_' + k.to_upper(), true)

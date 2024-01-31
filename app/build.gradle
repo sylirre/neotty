@@ -1,0 +1,76 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 33
+
+    dependencies {
+        implementation "androidx.annotation:annotation:1.4.0"
+        implementation "androidx.preference:preference:1.2.0"
+    }
+
+    defaultConfig {
+        applicationId "app.neotty"
+        minSdkVersion 24
+        targetSdkVersion 33
+        versionCode 2
+        versionName "1.2"
+
+        archivesBaseName = "NeoTTY-$versionName"
+
+        splits {
+            abi {
+                enable false
+                reset()
+                include 'arm64-v8a', 'x86_64', 'armeabi-v7a', 'x86'
+                universalApk true
+            }
+        }
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('android.jks')
+            keyAlias 'android'
+            storePassword System.getenv("KEY_PASSPHRASE")
+            keyPassword System.getenv("KEY_PASSPHRASE")
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+
+        debug {
+            minifyEnabled false
+            shrinkResources false
+            //signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    packagingOptions {
+        jniLibs.useLegacyPackaging = true
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+tasks.withType(Test) {
+    testLogging {
+        events "started", "passed", "skipped", "failed"
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}

@@ -1,0 +1,168 @@
+diff -uNr qemu-7.0.0/meson.build qemu-7.0.0.mod/meson.build
+--- qemu-7.0.0/meson.build	2022-07-09 21:32:14.875093150 +0300
++++ qemu-7.0.0.mod/meson.build	2022-07-09 21:41:04.751616949 +0300
+@@ -2356,6 +2356,7 @@
+                                build_by_default: false,
+                                sources: capstone_files,
+                                c_args: capstone_cargs,
++                               pic: true,
+                                include_directories: 'capstone/include')
+   capstone = declare_dependency(link_with: libcapstone,
+                                 include_directories: 'capstone/include/capstone')
+@@ -2436,6 +2437,7 @@
+                               build_by_default: false,
+                               sources: slirp_files,
+                               c_args: slirp_cargs,
++                              pic: true,
+                               include_directories: slirp_inc)
+     slirp = declare_dependency(link_with: libslirp,
+                                dependencies: slirp_deps,
+@@ -2496,6 +2498,7 @@
+     libfdt = static_library('fdt',
+                             build_by_default: false,
+                             sources: fdt_files,
++                            pic: true,
+                             include_directories: fdt_inc)
+     fdt = declare_dependency(link_with: libfdt,
+                              include_directories: fdt_inc)
+@@ -2770,6 +2773,7 @@
+ util_ss = util_ss.apply(config_all, strict: false)
+ libqemuutil = static_library('qemuutil',
+                              sources: util_ss.sources() + stub_ss.sources() + genh,
++                             pic: true,
+                              dependencies: [util_ss.dependencies(), libm, threads, glib, socket, malloc, pixman])
+ qemuutil = declare_dependency(link_with: libqemuutil,
+                               sources: genh + version_res)
+@@ -2837,6 +2841,7 @@
+     pagevary_flags += '-fno-sanitize=cfi-icall'
+   endif
+   pagevary = static_library('page-vary-common', sources: pagevary + genh,
++                            pic: true,
+                             c_args: pagevary_flags)
+   pagevary = declare_dependency(link_with: pagevary)
+ endif
+@@ -2959,7 +2964,7 @@
+                               input: modinfo_files,
+                               command: [modinfo_generate, '@INPUT@'],
+                               capture: true)
+-  modinfo_lib = static_library('modinfo', modinfo_src)
++  modinfo_lib = static_library('modinfo', modinfo_src, pic: true)
+   modinfo_dep = declare_dependency(link_whole: modinfo_lib)
+   softmmu_ss.add(modinfo_dep)
+ endif
+@@ -2978,7 +2983,8 @@
+ qom_ss = qom_ss.apply(config_host, strict: false)
+ libqom = static_library('qom', qom_ss.sources() + genh,
+                         dependencies: [qom_ss.dependencies()],
+-                        name_suffix: 'fa')
++                        name_suffix: 'fa',
++                        pic: true)
+ 
+ qom = declare_dependency(link_whole: libqom)
+ 
+@@ -2986,7 +2992,8 @@
+ libauthz = static_library('authz', authz_ss.sources() + genh,
+                           dependencies: [authz_ss.dependencies()],
+                           name_suffix: 'fa',
+-                          build_by_default: false)
++                          build_by_default: false,
++                          pic:true)
+ 
+ authz = declare_dependency(link_whole: libauthz,
+                            dependencies: qom)
+@@ -2995,7 +3002,8 @@
+ libcrypto = static_library('crypto', crypto_ss.sources() + genh,
+                            dependencies: [crypto_ss.dependencies()],
+                            name_suffix: 'fa',
+-                           build_by_default: false)
++                           build_by_default: false,
++                           pic: true)
+ 
+ crypto = declare_dependency(link_whole: libcrypto,
+                             dependencies: [authz, qom])
+@@ -3005,13 +3013,15 @@
+                        dependencies: [io_ss.dependencies()],
+                        link_with: libqemuutil,
+                        name_suffix: 'fa',
+-                       build_by_default: false)
++                       build_by_default: false,
++                       pic: true)
+ 
+ io = declare_dependency(link_whole: libio, dependencies: [crypto, qom])
+ 
+ libmigration = static_library('migration', sources: migration_files + genh,
+                               name_suffix: 'fa',
+-                              build_by_default: false)
++                              build_by_default: false,
++                              pic: true)
+ migration = declare_dependency(link_with: libmigration,
+                                dependencies: [zlib, qom, io])
+ softmmu_ss.add(migration)
+@@ -3021,7 +3031,8 @@
+                           dependencies: block_ss.dependencies(),
+                           link_depends: block_syms,
+                           name_suffix: 'fa',
+-                          build_by_default: false)
++                          build_by_default: false,
++                          pic: true)
+ 
+ block = declare_dependency(link_whole: [libblock],
+                            link_args: '@block.syms',
+@@ -3031,7 +3042,8 @@
+ libblockdev = static_library('blockdev', blockdev_ss.sources() + genh,
+                              dependencies: blockdev_ss.dependencies(),
+                              name_suffix: 'fa',
+-                             build_by_default: false)
++                             build_by_default: false,
++                             pic: true)
+ 
+ blockdev = declare_dependency(link_whole: [libblockdev],
+                               dependencies: [block])
+@@ -3040,21 +3052,24 @@
+ libqmp = static_library('qmp', qmp_ss.sources() + genh,
+                         dependencies: qmp_ss.dependencies(),
+                         name_suffix: 'fa',
+-                        build_by_default: false)
++                        build_by_default: false,
++                        pic: true)
+ 
+ qmp = declare_dependency(link_whole: [libqmp])
+ 
+ libchardev = static_library('chardev', chardev_ss.sources() + genh,
+                             name_suffix: 'fa',
+                             dependencies: [gnutls],
+-                            build_by_default: false)
++                            build_by_default: false,
++                            pic: true)
+ 
+ chardev = declare_dependency(link_whole: libchardev)
+ 
+ hwcore_ss = hwcore_ss.apply(config_host, strict: false)
+ libhwcore = static_library('hwcore', sources: hwcore_ss.sources() + genh,
+                            name_suffix: 'fa',
+-                           build_by_default: false)
++                           build_by_default: false,
++                           pic: true)
+ hwcore = declare_dependency(link_whole: libhwcore)
+ common_ss.add(hwcore)
+ 
+@@ -3085,7 +3100,8 @@
+                             include_directories: common_user_inc,
+                             implicit_include_directories: false,
+                             dependencies: common_all.dependencies(),
+-                            name_suffix: 'fa')
++                            name_suffix: 'fa',
++                            pic: true)
+ 
+ feature_to_c = find_program('scripts/feature_to_c.sh')
+ 
+@@ -3187,7 +3203,8 @@
+                  include_directories: target_inc,
+                  c_args: c_args,
+                  build_by_default: false,
+-                 name_suffix: 'fa')
++                 name_suffix: 'fa',
++                 pic: true)
+ 
+   if target.endswith('-softmmu')
+     execs = [{

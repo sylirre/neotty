@@ -1,0 +1,165 @@
+[0;36m----------------------------------------------------------------[0m
+
+[1;96m= APPLICATION USAGE HOW-TO =[0m
+
+[1;36mTerminal gestures:[0m
+
+ [0;36m- Pinch-zooming: change font size, use command [0;32mresize[0;36m after.[0m
+ [0;36m- Short tap: left mouse button click in compatible programs.[0m
+ [0;36m- Long tap: open context menu.[0m
+
+[1;36mPreventing host sleep mode[0;36m: if you need to run the virtual
+machine while device screen is off, a wake lock should be
+enabled. You can toggle it through the notification. Disabled
+wake lock can lead to system clock appearing to be out-of-sync
+or pausing of the whole VM.[0m
+
+[1;36mKey shortcuts[0;36m: application supports combinations of keys from
+touch keyboard and Volume-Up/Volume-Down buttons. Volume-Down
+emulates the Ctrl key and Volume-Up can be used to produce
+special input:[0m
+
+ [1;36m+====================+================================+[0m
+ [1;36m|[1;32m Key combination    [1;36m|[1;32m Produced input                 [1;36m|[0m
+ [1;36m+====================+================================+[0m
+ [1;36m| [0;32mVolume-Up .        [1;36m| [0;32mCtrl \                         [1;36m|[0m
+ [1;36m| [0;32mVolume-Up <1..9>   [1;36m| [0;32mF1, F2, ..., F9 keys           [1;36m|[0m
+ [1;36m| [0;32mVolume-Up 0        [1;36m| [0;32mF10                            [1;36m|[0m
+ [1;36m| [0;32mVolume-Up A        [1;36m| [0;32mLeft arrow key                 [1;36m|[0m
+ [1;36m| [0;32mVolume-Up B        [1;36m| [0;32mAlt B                          [1;36m|[0m
+ [1;36m| [0;32mVolume-Up D        [1;36m| [0;32mRight arrow key                [1;36m|[0m
+ [1;36m| [0;32mVolume-Up E        [1;36m| [0;32mEscape                         [1;36m|[0m
+ [1;36m| [0;32mVolume-Up F        [1;36m| [0;32mAlt F                          [1;36m|[0m
+ [1;36m| [0;32mVolume-Up H        [1;36m| [1;32m~ [0;32mthe tilde character          [1;36m|[0m
+ [1;36m| [0;32mVolume-Up K        [1;36m| [0;32mToggle extra keys row          [1;36m|[0m
+ [1;36m| [0;32mVolume-Up L        [1;36m| [1;32m| [0;32mthe pipe character           [1;36m|[0m
+ [1;36m| [0;32mVolume-Up N        [1;36m| [0;32mPage down key                  [1;36m|[0m
+ [1;36m| [0;32mVolume-Up P        [1;36m| [0;32mPage up key                    [1;36m|[0m
+ [1;36m| [0;32mVolume-Up S        [1;36m| [0;32mDown arrow key                 [1;36m|[0m
+ [1;36m| [0;32mVolume-Up T        [1;36m| [0;32mTab key                        [1;36m|[0m
+ [1;36m| [0;32mVolume-Up U        [1;36m| [1;32m_ [0;32mthe underscore character     [1;36m|[0m
+ [1;36m| [0;32mVolume-Up V        [1;36m| [0;32mShow the volume control        [1;36m|[0m
+ [1;36m| [0;32mVolume-Up W        [1;36m| [0;32mUp arrow key                   [1;36m|[0m
+ [1;36m| [0;32mVolume-Up X        [1;36m| [0;32mAlt X                          [1;36m|[0m
+ [1;36m|____________________|________________________________|[0m
+
+[0;36mNote that Volume-Up does not represent the Alt key even though
+it is being used to emulate certain its combinations.[0m
+
+[0;36mThese key combinations can be used on a hardware keyboard to
+trigger certain actions of the application:[0m
+
+ [1;36m+=================+===============================+[0m
+ [1;36m|[1;32m Key combination [1;36m|[1;32m Action                        [1;36m|[0m
+ [1;36m+=================+===============================+[0m
+ [1;36m| [0;32mCtrl Alt +      [1;36m| [0;32mIncrease text size            [1;36m|[0m
+ [1;36m| [0;32mCtrl Alt -      [1;36m| [0;32mReduce text size              [1;36m|[0m
+ [1;36m| [0;32mCtrl Alt K      [1;36m| [0;32mToggle the touch keyboard     [1;36m|[0m
+ [1;36m| [0;32mCtrl Alt M      [1;36m| [0;32mOpen context menu             [1;36m|[0m
+ [1;36m| [0;32mCtrl Alt U      [1;36m| [0;32mOpen URL selector             [1;36m|[0m
+ [1;36m| [0;32mCtrl Alt V      [1;36m| [0;32mPaste clipboard               [1;36m|[0m
+ [1;36m|_________________|_______________________________|[0m
+
+[1;36mPort forwarding[0;36m: VM is configured to forward ports of SSH (22),
+HTTP (80) and HTTPS (443) services. These guest ports are
+forwarded to 16022, 16080 and 16443 respectively when possible.
+On allocation failure the VM will use random port numbers as
+fallback.[0m
+
+[0;36mThe forwarded services will be accessible within your LAN. Be
+careful when running services with no authentication.[0m
+
+[0;36mYou can view the host ports through the context menu. They are
+shown on tabs "Open SSH", "Open HTTP" and "Open HTTPS". Click
+on the tab will result in attempt of launching the client for
+selected service, for example ConnectBot for SSH or Chrome for
+HTTP.[0m
+
+[0;36m----------------------------------------------------------------[0m
+
+[1;96m= ACCESSING HOST STORAGE =[0m
+
+[0;36mThe Android shared storage is a place where all your downloads,
+documents and media files are normally stored. You can mount it
+by using this command:[0m
+
+  [0;32mmount -t 9p shared_storage /mnt[0m
+
+[0;36mIn order to access the shared storage, the application should
+be granted storage access permission. This can be done in
+Android OS settings menu. You may need to check the special
+permissions menu, if using Android OS version 11+. After
+granting the permission please restart the application.[0m
+
+[0;36m----------------------------------------------------------------[0m
+
+[1;96m= INSTALLING SYSTEM ON DISK =[0m
+
+[0;36mDefault installation is diskless and files are stored on tmpfs.
+All changes like configuration or your files are discarded once
+the virtual machine was rebooted or shut down. There is a limit
+on size of temporary file system, which significantly limits
+the packages you can install.[0m
+
+[0;36mAlpine Linux can be installed on persistent disk using the
+utility [0;32msetup-disk[0;36m. An example command is shown below.[0m
+
+  [0;32mexport ROOT_SIZE=4096[0m
+  [0;32msetup-disk -m sys -s 0 /dev/sda[0m
+
+[0;36mThis command installs the system on 4 GiB root parition and
+disables swap. The variable ROOT_SIZE specified root partition
+size in MiB.[0m
+
+[0;36mIt is recommended that after installation you will edit the
+bootloader configuration file (extlinux.conf) and add these
+parameters to kernel command line:[0m
+
+  [0;32mconsole=ttyS0,115200 tsc=unstable nowatchdog[0m
+
+[0;36mAdditionally you may want to remove option "quiet" to have the
+boot logs shown on console.[0m
+
+[0;36m----------------------------------------------------------------[0m
+
+[1;96m= GETTING HELP FOR ALPINE LINUX =[0m
+
+[0;36mBundled offline tutorials about Bash and Linux system usage
+can be found in directory [0;32m/usr/local/share/doc/tldp[0;36m. They are
+text editions of certain books from TLDP.[0m
+
+[0;36mYou can execute these commands to open a specific guide:[0m
+
+ [0;36m- [0;32mguide-linux-intro[0m
+
+   [0;36mIntroduction to Linux by Machtelt Garrels.[0m
+
+ [0;36m- [0;32mguide-linux-admin[0m
+
+   [0;36mLinux System Administrator's Guide by Lars Wirzenius.[0m
+
+ [0;36m- [0;32mguide-bash-for-beginners[0m
+
+   [0;36mBash Guide for Beginners by Machtelt Garrels.[0m
+
+ [0;36m- [0;32mguide-advanced-bash-scripting[0m
+
+   [0;36mAdvanced Bash Scripting Guide by Mendel Cooper.[0m
+
+[0;36mOnce finished read the guide using one of commands above,
+type 'q' to exit.[0m
+
+[0;36mAlpine Linux uses [0;32mapk [0;36mas package manager. Below is the list
+of essential commands:[0m
+
+ [0;36m- Search package:  [0;32mapk search <query>[0m
+ [0;36m- Install package: [0;32mapk add <pkg-name>[0m
+ [0;36m- Remove package:  [0;32mapk del <pkg-name>[0m
+ [0;36m- Upgrade system:  [0;32mapk upgrade[0m
+
+[0;36mComprehensive tutorials specific to Alpine Linux system usage
+can be found on its official Wiki.[0m
+
+[1;36mVisit Alpine Wiki[0;36m: [0;35mhttps://wiki.alpinelinux.org/wiki/Main_Page[0m
+
+[0;36m----------------------------------------------------------------[0m

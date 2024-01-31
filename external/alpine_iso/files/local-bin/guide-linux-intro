@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec less /usr/local/share/doc/tldp/Introduction_To_Linux.txt

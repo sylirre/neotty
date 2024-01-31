@@ -1,0 +1,11 @@
+--- ./usr/include/android/api-level.h	2022-07-09 18:34:44.024663561 +0300
++++ ./usr/include/android/api-level.h.orig	2022-07-09 18:34:22.780476654 +0300
+@@ -93,7 +93,7 @@
+  * android_get_application_target_sdk_version() and
+  * https://android.googlesource.com/platform/bionic/+/master/docs/defines.md.
+  */
+-#define __ANDROID_API__ __ANDROID_API_FUTURE__
++#define __ANDROID_API__ 24
+ #endif
+ 
+ /** Names the Gingerbread API level (9), for comparison against `__ANDROID_API__`. */

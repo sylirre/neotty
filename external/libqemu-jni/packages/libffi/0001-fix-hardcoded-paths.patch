@@ -1,0 +1,17 @@
+diff -uNr libffi-3.2.1/src/closures.c libffi-3.2.1.mod/src/closures.c
+--- libffi-3.2.1/src/closures.c	2014-11-08 14:47:24.000000000 +0200
++++ libffi-3.2.1.mod/src/closures.c	2019-12-14 20:27:56.006489582 +0200
+@@ -391,10 +391,10 @@
+   int repeat;
+ } open_temp_exec_file_opts[] = {
+   { open_temp_exec_file_env, "TMPDIR", 0 },
+-  { open_temp_exec_file_dir, "/tmp", 0 },
+-  { open_temp_exec_file_dir, "/var/tmp", 0 },
+-  { open_temp_exec_file_dir, "/dev/shm", 0 },
++  { open_temp_exec_file_env, "APP_RUNTIME_DIR", 0 },
+   { open_temp_exec_file_env, "HOME", 0 },
++  { open_temp_exec_file_dir, "/data/local/tmp", 0 },
++  { open_temp_exec_file_dir, "/dev/shm", 0 },
+ #ifdef HAVE_MNTENT
+   { open_temp_exec_file_mnt, "/etc/mtab", 1 },
+   { open_temp_exec_file_mnt, "/proc/mounts", 1 },

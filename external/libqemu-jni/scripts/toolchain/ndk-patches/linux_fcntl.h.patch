@@ -1,0 +1,16 @@
+diff -uNr ./usr.old/include/linux/fcntl.h ./usr/include/linux/fcntl.h
+--- ./usr.old/include/linux/fcntl.h	2019-10-17 15:35:02.000000000 +0300
++++ ./usr/include/linux/fcntl.h	2019-12-13 19:24:38.948217810 +0200
+@@ -50,6 +50,12 @@
+ #define DN_ATTRIB 0x00000020
+ #define DN_MULTISHOT 0x80000000
+ #define AT_FDCWD - 100
++/* This flag is not supported on Android 6.0+, and should not be
++   needed since there are not setuid binaries. Define AT_EACCESS
++   to 0 to avoid packages defining their own AT_EACCESS (which
++   e.g. coreutil does) since that will only result in errors. See:
++   https://android.googlesource.com/platform/bionic/+/3577825%5E!/      */
++#define AT_EACCESS 0
+ #define AT_SYMLINK_NOFOLLOW 0x100
+ #define AT_REMOVEDIR 0x200
+ #define AT_SYMLINK_FOLLOW 0x400

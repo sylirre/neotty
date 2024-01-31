@@ -1,0 +1,139 @@
+--- ./usr/include/stdio.h.orig	2022-05-11 02:48:28.000000000 +0300
++++ ./usr/include/stdio.h	2022-07-09 18:39:38.071250746 +0300
+@@ -44,6 +44,9 @@
+ #include <stdarg.h>
+ #include <stddef.h>
+ 
++#include <string.h>            /* For strcpy(3) used by ctermid() */
++#include <asm/fcntl.h>         /* For O_RDWR and other O_* constants */
++
+ #include <bits/seek_constants.h>
+ 
+ #if __ANDROID_API__ < 24
+@@ -165,7 +168,6 @@
+     __printflike(2, 0) __warnattr_strict("vsprintf is often misused; please use vsnprintf");
+ char* tmpnam(char* __s)
+     __warnattr("tmpnam is unsafe, use mkstemp or tmpfile instead");
+-#define P_tmpdir "/tmp/" /* deprecated */
+ char* tempnam(const char* __dir, const char* __prefix)
+     __warnattr("tempnam is unsafe, use mkstemp or tmpfile instead");
+ 
+@@ -289,12 +291,6 @@
+ FILE* freopen64(const char* __path, const char* __mode, FILE* __fp) __INTRODUCED_IN(24);
+ #endif /* __ANDROID_API__ >= 24 */
+ 
+-FILE* tmpfile(void);
+-
+-#if __ANDROID_API__ >= 24
+-FILE* tmpfile64(void) __INTRODUCED_IN(24);
+-#endif /* __ANDROID_API__ >= 24 */
+-
+ 
+ int snprintf(char* __buf, size_t __size, const char* __fmt, ...) __printflike(3, 4);
+ int vfscanf(FILE* __fp, const char* __fmt, va_list __args) __scanflike(2, 0);
+@@ -304,9 +300,14 @@
+ 
+ #define L_ctermid 1024 /* size for ctermid() */
+ 
+-#if __ANDROID_API__ >= 26
+-char* ctermid(char* __buf) __INTRODUCED_IN(26);
+-#endif /* __ANDROID_API__ >= 26 */
++static __inline__ char* ctermid(char* s) {
++    if (!s) return (char*) "/dev/tty";
++    strcpy(s, "/dev/tty");
++    return s;
++}
++
++/* Needed by gnulibs freading(). */
++#define __sferror(p)    (((p)->_flags & __SERR) != 0)
+ 
+ 
+ FILE* fdopen(int __fd, const char* __mode);
+@@ -372,6 +373,87 @@
+ 
+ #endif
+ 
++char* getenv(const char* __name);
++void free(void* p);
++__noreturn void abort(void);
++
++// Prepend application runtime directory path to given string.
++// Returned pointer should be passed to free().
++static __inline__ char *android_dynamic_path_prefix(const char *basic_path) {
++    char *env_prefix = getenv("APP_RUNTIME_DIR");
++    char *prefixed_path;
++
++    if (!env_prefix) {
++#define __XSTRINGIFY(x) #x
++#define __STRINGIFY(x) __XSTRINGIFY(x)
++#ifndef APPLICATION_RUNTIME_PREFIX
++#error "Please, define the APPLICATION_RUNTIME_PREFIX"
++#else
++        env_prefix = __STRINGIFY(APPLICATION_RUNTIME_PREFIX);
++#endif
++#undef __XSTRINGIFY
++#undef __STRINGIFY
++        fprintf(stderr, "%s", "Warning: program is built with 'Dynamic path prefix' feature but the environment variable 'APP_RUNTIME_DIR' is not set.\n");
++        fprintf(stderr, "Using the %s as fallback.\n", env_prefix);
++    }
++
++    if (asprintf(&prefixed_path, "%s%s", env_prefix, basic_path) == -1) {
++        fprintf(stderr, "Error: failed to create prefixed path for '%s'.\n", basic_path);
++        abort();
++    }
++
++    return prefixed_path;
++}
++
++int open(const char*, int, ...);
++pid_t getpid();
++int unlink(const char*);
++uint32_t arc4random(void);
++
++static __inline__ FILE* tmpfile() {
++    char *tmpdir = getenv("TMPDIR");
++
++    if (!tmpdir) {
++        tmpdir = android_dynamic_path_prefix("/tmp");
++    } else {
++        // Since tmpdir can be an allocated string (see above), it is
++        // needed to strdup() it if obtained from environment variable.
++        tmpdir = strdup(tmpdir);
++
++        if (!tmpdir) {
++            return NULL;
++        }
++    }
++
++    for (int i = 0; i < 100; i++) {
++        char *path;
++
++        if (asprintf(&path, "%s/tmpfile.%d-%u", tmpdir, getpid(), arc4random()) == -1) {
++            free(tmpdir);
++            return NULL;
++        }
++
++        int fd = open(path, O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0600);
++
++        if (fd >= 0) {
++            FILE *result = fdopen(fd, "w+");
++            unlink(path);
++            free(path);
++            free(tmpdir);
++            return result;
++        }
++
++        free(path);
++    }
++
++    free(tmpdir);
++    return NULL;
++}
++
++#if __ANDROID_API__ >= 24
++#define tmpfile64 tmpfile
++#endif /* __ANDROID_API__ >= 24 */
++
+ #if defined(__BIONIC_INCLUDE_FORTIFY_HEADERS)
+ #include <bits/fortify/stdio.h>
+ #endif

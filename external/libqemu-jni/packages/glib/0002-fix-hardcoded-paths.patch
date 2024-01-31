@@ -1,0 +1,290 @@
+diff -uNr glib-2.58.3/gio/gdbusaddress.c glib-2.58.3.mod/gio/gdbusaddress.c
+--- glib-2.58.3/gio/gdbusaddress.c	2019-01-21 15:38:50.000000000 +0200
++++ glib-2.58.3.mod/gio/gdbusaddress.c	2019-12-14 19:52:56.873522350 +0200
+@@ -1628,7 +1628,9 @@
+       ret = g_strdup (g_getenv ("DBUS_SYSTEM_BUS_ADDRESS"));
+       if (ret == NULL)
+         {
+-          ret = g_strdup ("unix:path=/var/run/dbus/system_bus_socket");
++          char *tmpbuf = android_dynamic_path_prefix("/var/run/dbus/system_bus_socket");
++          asprintf(&ret, "%s%s", "unix:path=", tmpbuf);
++          free(tmpbuf);
+         }
+       break;
+ 
+diff -uNr glib-2.58.3/gio/gdbusprivate.c glib-2.58.3.mod/gio/gdbusprivate.c
+--- glib-2.58.3/gio/gdbusprivate.c	2019-01-21 15:38:50.000000000 +0200
++++ glib-2.58.3.mod/gio/gdbusprivate.c	2019-12-14 19:44:41.934065024 +0200
+@@ -2098,15 +2098,21 @@
+   /* TODO: use PACKAGE_LOCALSTATEDIR ? */
+   ret = NULL;
+   first_error = NULL;
+-  if (!g_file_get_contents ("/var/lib/dbus/machine-id",
++
++  char *machineid_file_path = android_dynamic_path_prefix("/var/lib/dbus/machine-id");
++  char *machineid_file_path_alt = android_dynamic_path_prefix("/etc/machine-id");
++
++  if (!g_file_get_contents (machineid_file_path,
+                             &ret,
+                             NULL,
+                             &first_error) &&
+-      !g_file_get_contents ("/etc/machine-id",
++      !g_file_get_contents (machineid_file_path_alt,
+                             &ret,
+                             NULL,
+                             NULL))
+     {
++      free(machineid_file_path);
++      free(machineid_file_path_alt);
+       g_propagate_prefixed_error (error, first_error,
+                                   _("Unable to load /var/lib/dbus/machine-id or /etc/machine-id: "));
+     }
+@@ -2117,6 +2123,9 @@
+       /* TODO: validate value */
+       g_strstrip (ret);
+     }
++
++  free(machineid_file_path);
++  free(machineid_file_path_alt);
+   return ret;
+ #endif
+ }
+diff -uNr glib-2.58.3/gio/giomodule.c glib-2.58.3.mod/gio/giomodule.c
+--- glib-2.58.3/gio/giomodule.c	2019-01-21 15:38:50.000000000 +0200
++++ glib-2.58.3.mod/gio/giomodule.c	2019-12-14 19:55:06.656139190 +0200
+@@ -1099,7 +1099,7 @@
+ #endif
+       g_free (install_dir);
+ #else
+-      module_dir = g_strdup (GIO_MODULE_DIR);
++      module_dir = android_dynamic_path_prefix("/lib/gio/modules");
+ #endif
+     }
+ 
+diff -uNr glib-2.58.3/gio/gunixmounts.c glib-2.58.3.mod/gio/gunixmounts.c
+--- glib-2.58.3/gio/gunixmounts.c	2019-01-21 15:38:50.000000000 +0200
++++ glib-2.58.3.mod/gio/gunixmounts.c	2019-12-14 19:36:47.641378222 +0200
+@@ -222,48 +222,11 @@
+ g_unix_is_mount_path_system_internal (const char *mount_path)
+ {
+   const char *ignore_mountpoints[] = {
+-    /* Includes all FHS 2.3 toplevel dirs and other specialized
+-     * directories that we want to hide from the user.
+-     */
+     "/",              /* we already have "Filesystem root" in Nautilus */ 
+-    "/bin",
+-    "/boot",
+-    "/compat/linux/proc",
+-    "/compat/linux/sys",
+     "/dev",
+     "/etc",
+-    "/home",
+-    "/lib",
+-    "/lib64",
+-    "/libexec",
+-    "/live/cow",
+-    "/live/image",
+-    "/media",
+     "/mnt",
+-    "/opt",
+-    "/rescue",
+-    "/root",
+-    "/sbin",
+-    "/srv",
+-    "/tmp",
+-    "/usr",
+-    "/usr/X11R6",
+-    "/usr/local",
+-    "/usr/obj",
+-    "/usr/ports",
+-    "/usr/src",
+-    "/usr/xobj",
+-    "/var",
+-    "/var/crash",
+-    "/var/local",
+-    "/var/log",
+-    "/var/log/audit", /* https://bugzilla.redhat.com/show_bug.cgi?id=333041 */
+-    "/var/mail",
+-    "/var/run",
+-    "/var/tmp",       /* https://bugzilla.redhat.com/show_bug.cgi?id=335241 */
+     "/proc",
+-    "/sbin",
+-    "/net",
+     "/sys",
+     NULL
+   };
+@@ -2955,7 +2918,7 @@
+           /* see if device with similar major:minor as /dev/root is mention
+            * in /etc/mtab (it usually is) 
+            */
+-          f = fopen ("/etc/mtab", "r");
++          f = fopen ("/proc/mounts", "r");
+           if (f != NULL) 
+             {
+ 	      struct mntent *entp;
+diff -uNr glib-2.58.3/gio/xdgmime/xdgmime.c glib-2.58.3.mod/gio/xdgmime/xdgmime.c
+--- glib-2.58.3/gio/xdgmime/xdgmime.c	2019-01-21 15:38:50.000000000 +0200
++++ glib-2.58.3.mod/gio/xdgmime/xdgmime.c	2019-12-14 20:09:24.123232254 +0200
+@@ -217,13 +217,14 @@
+   return FALSE; /* Keep processing */
+ }
+ 
++
+ /* Runs a command on all the directories in the search path */
+ static void
+ xdg_run_command_on_dirs (XdgDirectoryFunc  func,
+ 			 void             *user_data)
+ {
+   const char *xdg_data_home;
+-  const char *xdg_data_dirs;
++  char *xdg_data_dirs;
+   const char *ptr;
+ 
+   xdg_data_home = getenv ("XDG_DATA_HOME");
+@@ -253,10 +254,7 @@
+ 	}
+     }
+ 
+-  xdg_data_dirs = getenv ("XDG_DATA_DIRS");
+-  if (xdg_data_dirs == NULL)
+-    xdg_data_dirs = "/usr/local/share/:/usr/share/";
+-
++  xdg_data_dirs = android_dynamic_path_prefix("/share/");
+   ptr = xdg_data_dirs;
+ 
+   while (*ptr != '\000')
+@@ -291,6 +289,7 @@
+ 
+       ptr = end_ptr;
+     }
++  free(xdg_data_dirs);
+ }
+ 
+ /* Checks file_path to make sure it has the same mtime as last time it was
+diff -uNr glib-2.58.3/glib/gcharset.c glib-2.58.3.mod/glib/gcharset.c
+--- glib-2.58.3/glib/gcharset.c	2019-01-21 15:38:50.000000000 +0200
++++ glib-2.58.3.mod/glib/gcharset.c	2019-12-14 19:17:06.007144200 +0200
+@@ -287,6 +287,7 @@
+ 
+ #endif
+ 
++
+ static char *
+ unalias_lang (char *lang)
+ {
+@@ -298,7 +299,9 @@
+   if (g_once_init_enter (&alias_table))
+     {
+       GHashTable *table = g_hash_table_new (g_str_hash, g_str_equal);
+-      read_aliases ("/usr/share/locale/locale.alias", table);
++      char *locale_alias_path = android_dynamic_path_prefix("/share/locale/locale.alias");
++      read_aliases (locale_alias_path, table);
++      free(locale_alias_path);
+       g_once_init_leave (&alias_table, table);
+     }
+ 
+diff -uNr glib-2.58.3/glib/gspawn.c glib-2.58.3.mod/glib/gspawn.c
+--- glib-2.58.3/glib/gspawn.c	2019-01-21 15:38:50.000000000 +0200
++++ glib-2.58.3.mod/glib/gspawn.c	2019-12-14 19:14:19.762491741 +0200
+@@ -2059,7 +2059,7 @@
+ 
+     new_argv = g_new0 (gchar*, argc + 2); /* /bin/sh and NULL */
+     
+-    new_argv[0] = (char *) "/bin/sh";
++    new_argv[0] = (char *) "/system/bin/sh";
+     new_argv[1] = (char *) file;
+     while (argc > 0)
+       {
+@@ -2138,7 +2138,7 @@
+            * what to search if PATH is unset. POSIX may, dunno.
+            */
+           
+-          path = "/bin:/usr/bin:.";
++          path = "/system/bin";
+ 	}
+ 
+       len = strlen (file) + 1;
+diff -uNr glib-2.58.3/glib/gutils.c glib-2.58.3.mod/glib/gutils.c
+--- glib-2.58.3/glib/gutils.c	2019-01-21 15:38:50.000000000 +0200
++++ glib-2.58.3.mod/glib/gutils.c	2019-12-14 20:07:55.202694051 +0200
+@@ -302,6 +302,7 @@
+ 
+ #endif
+ 
++
+ /**
+  * g_find_program_in_path:
+  * @program: (type filename): a program name in the GLib file name encoding
+@@ -381,7 +382,7 @@
+        * what to search if PATH is unset. POSIX may, dunno.
+        */
+       
+-      path = "/bin:/usr/bin:.";
++      path = "/system/bin";
+     }
+ #else
+   n = GetModuleFileNameW (NULL, wfilename, MAXPATHLEN);
+@@ -959,7 +960,7 @@
+       if (tmp == NULL || *tmp == '\0')
+         {
+           g_free (tmp);
+-          tmp = g_strdup ("/tmp");
++          tmp = android_dynamic_path_prefix("/tmp");
+         }
+ #endif /* !G_OS_WIN32 */
+ 
+@@ -2039,19 +2040,10 @@
+ 
+   if (!g_system_data_dirs)
+     {
+-      gchar *data_dirs = (gchar *) g_getenv ("XDG_DATA_DIRS");
+-
+-#ifndef G_OS_WIN32
+-      if (!data_dirs || !data_dirs[0])
+-          data_dirs = "/usr/local/share/:/usr/share/";
++      gchar *data_dirs = android_dynamic_path_prefix("/share/");
+ 
+       data_dir_vector = g_strsplit (data_dirs, G_SEARCHPATH_SEPARATOR_S, 0);
+-#else
+-      if (!data_dirs || !data_dirs[0])
+-        data_dir_vector = g_strdupv ((gchar **) g_win32_get_system_data_dirs_for_module_real (NULL));
+-      else
+-        data_dir_vector = g_strsplit (data_dirs, G_SEARCHPATH_SEPARATOR_S, 0);
+-#endif
++      free(data_dirs);
+ 
+       g_system_data_dirs = data_dir_vector;
+     }
+@@ -2099,30 +2091,9 @@
+ 
+   if (!g_system_config_dirs)
+     {
+-      const gchar *conf_dirs = g_getenv ("XDG_CONFIG_DIRS");
+-#ifdef G_OS_WIN32
+-      if (conf_dirs)
+-	{
+-	  conf_dir_vector = g_strsplit (conf_dirs, G_SEARCHPATH_SEPARATOR_S, 0);
+-	}
+-      else
+-	{
+-	  gchar *special_conf_dirs = get_special_folder (CSIDL_COMMON_APPDATA);
+-
+-	  if (special_conf_dirs)
+-	    conf_dir_vector = g_strsplit (special_conf_dirs, G_SEARCHPATH_SEPARATOR_S, 0);
+-	  else
+-	    /* Return empty list */
+-	    conf_dir_vector = g_strsplit ("", G_SEARCHPATH_SEPARATOR_S, 0);
+-
+-	  g_free (special_conf_dirs);
+-	}
+-#else
+-      if (!conf_dirs || !conf_dirs[0])
+-          conf_dirs = "/etc/xdg";
+-
++      gchar *conf_dirs = android_dynamic_path_prefix("/etc/xdg");
+       conf_dir_vector = g_strsplit (conf_dirs, G_SEARCHPATH_SEPARATOR_S, 0);
+-#endif
++      free(conf_dirs);
+ 
+       g_system_config_dirs = conf_dir_vector;
+     }

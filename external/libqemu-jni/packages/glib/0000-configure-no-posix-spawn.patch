@@ -1,0 +1,20 @@
+diff -uNr glib-2.58.3/configure.ac glib-2.58.3.mod/configure.ac
+--- glib-2.58.3/configure.ac	2019-01-21 15:38:50.000000000 +0200
++++ glib-2.58.3.mod/configure.ac	2019-12-14 19:08:28.123183661 +0200
+@@ -478,7 +478,7 @@
+ 
+ # Checks for library functions.
+ AC_CHECK_FUNCS(mmap posix_memalign memalign valloc fsync pipe2 issetugid)
+-AC_CHECK_FUNCS(timegm gmtime_r posix_spawn)
++AC_CHECK_FUNCS(timegm gmtime_r)
+ AC_FUNC_STRERROR_R()
+ 
+ AC_CHECK_SIZEOF(char)
+@@ -639,7 +639,6 @@
+ AC_CHECK_HEADERS([linux/magic.h])
+ AC_CHECK_HEADERS([termios.h])
+ AC_CHECK_HEADERS([alloca.h])
+-AC_CHECK_HEADERS([spawn.h])
+ 
+ # Some versions of MSC lack these
+ AC_CHECK_HEADERS([dirent.h sys/time.h])

@@ -1,0 +1,231 @@
+name: Application
+
+on:
+  #pull_request:
+  #  types: [opened, synchronize]
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - .github/workflows/*
+      - app/**
+      - external/alpine_iso/**
+      - external/libqemu-jni/**
+      - gradle/**
+      - gradle*
+      - ./*.gradle
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  gradle-wrapper-check:
+    name: Validate Gradle wrapper
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Validation
+        uses: gradle/wrapper-validation-action@v1
+
+  terminal-tests:
+    name: Run unit tests for terminal emulator
+    needs: gradle-wrapper-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Testing terminal emulator library
+        run: ./gradlew test
+
+  system-image:
+    name: Build bootable ISO
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Abuild key
+        run: |
+          # Create ephemeral key if no secret passphrase provided.
+          if [ -z "$RSA_KEY_PASSPHRASE" ]; then
+            cd ./external/alpine_iso/abuild-keys
+            rm -f neotty.*
+            openssl genrsa -out neotty.rsa 2048
+            openssl rsa -in neotty.rsa -pubout -out neotty.rsa.pub
+            openssl aes-256-cbc -in neotty.rsa -out neotty.rsa.enc -k "pass" -pbkdf2
+            rm -f neotty.rsa
+            cd ..
+          fi
+        env:
+          RSA_KEY_PASSPHRASE: ${{ secrets.ABUILD_KEY_PASSPHRASE }}
+
+      - name: Cache artifacts
+        id: iso-cache
+        uses: actions/cache@v3
+        with:
+          path: ./app/src/main/assets/system.iso
+          key: system-image--${{ hashFiles('./app/build.gradle', './external/alpine_iso/**', '!./external/alpine_iso/abuild-keys/**', '!./external/alpine_iso/iso/**', '!./external/alpine_iso/**.md') }}
+
+      - name: Build Alpine Linux ISO
+        if: ${{ steps.iso-cache.outputs.cache-hit != 'true' }}
+        run: |
+          cd ./external/alpine_iso
+          [ -z "$RSA_KEY_PASSPHRASE" ] && export RSA_KEY_PASSPHRASE=pass
+          make build-docker OUTPUT_DIR=$(realpath ../../app/src/main/assets)
+        env:
+          RSA_KEY_PASSPHRASE: ${{ secrets.ABUILD_KEY_PASSPHRASE }}
+
+  libqemu-jni:
+    name: Build QEMU
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86, x86_64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cache artifacts
+        id: libqemu-jni-cache
+        uses: actions/cache@v3
+        with:
+          path: ./external/libqemu-jni/jniLibs/${{ matrix.abi }}/libqemu-jni.so
+          key: libqemu-jni--${{ matrix.abi }}--${{ hashFiles('./external/libqemu-jni/**', '!./external/libqemu-jni/jniLibs/**', '!./external/libqemu-jni/**.md') }}
+
+      - name: Setup build environment
+        if: ${{ steps.libqemu-jni-cache.outputs.cache-hit != 'true' }}
+        run: |
+          cd ./external/libqemu-jni/scripts
+          docker build -t neotty-buildenv .
+
+      - name: Compile QEMU package
+        if: ${{ steps.libqemu-jni-cache.outputs.cache-hit != 'true' }}
+        run: |
+          cd ./external/libqemu-jni
+
+          # Ensure that built libqemu-jni.so won't be mixed with prebuilt.
+          find ./jniLibs -type f -delete
+
+          case "${{ matrix.abi }}" in
+            arm64-v8a) arch=aarch64;;
+            armeabi-v7a) arch=arm;;
+            x86) arch=i686;;
+            x86_64) arch=x86_64;;
+            *) echo "Unknown ABI: ${{ matrix.abi }}"; exit 1;;
+          esac
+          ./scripts/run-docker.sh ./build-package.sh -a "$arch" qemu-system
+
+  app:
+    name: Build application
+    needs: [libqemu-jni, system-image, terminal-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get build id
+        id: build-id
+        run: echo "git_rev=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Get cached system image
+        uses: actions/cache@v3
+        with:
+          path: ./app/src/main/assets/system.iso
+          key: system-image--${{ hashFiles('./app/build.gradle', './external/alpine_iso/**', '!./external/alpine_iso/abuild-keys/**', '!./external/alpine_iso/iso/**', '!./external/alpine_iso/**.md') }}
+
+      - name: Get cached libqemu-jni.so (arm64-v8a)
+        uses: actions/cache@v3
+        with:
+          path: ./external/libqemu-jni/jniLibs/arm64-v8a/libqemu-jni.so
+          key: libqemu-jni--arm64-v8a--${{ hashFiles('./external/libqemu-jni/**', '!./external/libqemu-jni/jniLibs/**', '!./external/libqemu-jni/**.md') }}
+
+      - name: Get cached libqemu-jni.so (armeabi-v7a)
+        uses: actions/cache@v3
+        with:
+          path: ./external/libqemu-jni/jniLibs/armeabi-v7a/libqemu-jni.so
+          key: libqemu-jni--armeabi-v7a--${{ hashFiles('./external/libqemu-jni/**', '!./external/libqemu-jni/jniLibs/**', '!./external/libqemu-jni/**.md') }}
+
+      - name: Get cached libqemu-jni.so (x86)
+        uses: actions/cache@v3
+        with:
+          path: ./external/libqemu-jni/jniLibs/x86/libqemu-jni.so
+          key: libqemu-jni--x86--${{ hashFiles('./external/libqemu-jni/**', '!./external/libqemu-jni/jniLibs/**', '!./external/libqemu-jni/**.md') }}
+
+      - name: Get cached libqemu-jni.so (x86_64)
+        uses: actions/cache@v3
+        with:
+          path: ./external/libqemu-jni/jniLibs/x86_64/libqemu-jni.so
+          key: libqemu-jni--x86_64--${{ hashFiles('./external/libqemu-jni/**', '!./external/libqemu-jni/jniLibs/**', '!./external/libqemu-jni/**.md') }}
+
+      - name: Create APK
+        run: |
+          # Detect missing ISO file.
+          if [ ! -f ./app/src/main/assets/system.iso ]; then
+            echo "Missing ./app/src/main/assets/system.iso"
+            exit 1
+          fi
+
+          # Detect missing JNI libraries.
+          for abi in arm64-v8a armeabi-v7a x86 x86_64; do
+            if [ ! -f "./external/libqemu-jni/jniLibs/${abi}/libqemu-jni.so" ]; then
+              echo "Missing ./external/libqemu-jni/jniLibs/${abi}/libqemu-jni.so"
+              exit 1
+            fi
+          done
+
+          mkdir -p ./artifacts
+
+          if [ "${{ startsWith(github.ref, 'refs/tags/') }}" = "true" ]; then
+            ./gradlew assembleRelease
+            mkdir -p ./artifacts/apk
+            mv ./app/build/outputs/apk/release/* ./artifacts/apk/
+            ./gradlew bundleRelease
+            mkdir -p ./artifacts/bundle
+            mv ./app/build/outputs/bundle/release/* ./artifacts/bundle/
+          else
+            if [ -n "$KEY_PASSPHRASE" ]; then
+              sed -i -E 's|//(signingConfig signingConfigs.release)|\1|g' ./app/build.gradle
+            fi
+            ./gradlew assembleDebug
+            mkdir -p ./artifacts/apk
+            mv ./app/build/outputs/apk/debug/* ./artifacts/apk/
+          fi
+        env:
+          KEY_PASSPHRASE: "${{ secrets.ANDROID_KEY_PASSPHRASE }}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: NeoTTY-git-${{ steps.build-id.outputs.git_rev }}
+          path: ./artifacts/
+
+  publish:
+    name: Publish release
+    needs: [app]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get build id
+        id: build-id
+        run: echo "::set-output name=git_rev::$(git rev-parse --short HEAD)"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: NeoTTY-git-${{ steps.build-id.outputs.git_rev }}
+          path: ./artifacts/
+
+      - name: Publish release
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          gh release create "${TAG}" ./artifacts/apk/NeoTTY-*-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

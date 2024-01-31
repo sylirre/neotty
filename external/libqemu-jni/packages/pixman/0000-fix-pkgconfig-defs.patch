@@ -1,0 +1,10 @@
+diff -uNr pixman-0.40.0/pixman-1.pc.in pixman-0.40.0.mod/pixman-1.pc.in
+--- pixman-0.40.0/pixman-1.pc.in	2019-10-27 19:00:11.000000000 +0200
++++ pixman-0.40.0.mod/pixman-1.pc.in	2020-12-09 19:10:37.842617519 +0200
+@@ -7,5 +7,5 @@
+ Description: The pixman library (version 1)
+ Version: @PACKAGE_VERSION@
+ Cflags: -I${includedir}/pixman-1
+-Libs: -L${libdir} -lpixman-1
++Libs: -L${libdir} -lpixman-1 -landroid-cpufeatures
+ 
