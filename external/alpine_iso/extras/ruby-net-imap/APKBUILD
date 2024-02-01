@@ -1,0 +1,64 @@
+# Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+pkgname=ruby-net-imap
+_gemname=net-imap
+# Keep version in sync with "Bundled gems" (https://stdgems.org) for the
+# packaged Ruby version.
+pkgver=0.4.9.1
+pkgrel=0
+pkgdesc="Ruby client api for Internet Message Access Protocol"
+url="https://github.com/ruby/net-imap"
+arch="noarch"
+license="BSD-2-Clause AND Ruby"
+depends="ruby"
+makedepends="ruby-rdoc"
+checkdepends="
+	ruby-rake
+	ruby-test-unit
+	ruby-test-unit-ruby-core
+	"
+subpackages="$pkgname-doc"
+source="https://github.com/ruby/net-imap/archive/v$pkgver/$_gemname-$pkgver.tar.gz
+	gemspec.patch
+	"
+builddir="$srcdir/$_gemname-$pkgver"
+
+prepare() {
+	default_prepare
+	sed -i '/require .bundler/d' Rakefile
+}
+
+build() {
+	gem build $_gemname.gemspec
+}
+
+check() {
+	rake test
+}
+
+package() {
+	local gemdir="$pkgdir/$(ruby -e 'puts Gem.default_dir')"
+
+	gem install \
+		--local \
+		--install-dir "$gemdir" \
+		--ignore-dependencies \
+		--document ri \
+		--verbose \
+		$_gemname
+
+	# Remove unnessecary files
+	cd "$gemdir"
+	rm -rf build_info cache extensions plugins
+}
+
+doc() {
+	pkgdesc="$pkgdesc (ri docs)"
+
+	amove "$(ruby -e 'puts Gem.default_dir')"/doc
+}
+
+sha512sums="
+6428164246c1e8f1ad710eebe30d697fb403c781e8e13cfcb7ff30f9e65d5fc8059fe0e4bfcda3fc7e0b1387793b8fa0b099a6f66331baaa7c58b57b1b940c71  net-imap-0.4.9.1.tar.gz
+5ea3ff02e7faffc61400df54a7ebfbd7d2c034e135c0211355a0603b587405271a978db8876aaf4f2f06c0247fb55b1ad02b2ec85e536ce3df4480e9e89b69f9  gemspec.patch
+"

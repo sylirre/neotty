@@ -27,18 +27,21 @@ build-docker: setup-docker-image
 	mv $(OUTPUT_DIR)/alpine-x86_64.iso $(OUTPUT_DIR)/system.iso
 
 build-local:
-	#@echo "Building extra packages..."
-	#@echo
-	#mkdir -p $(CURRENT_DIR)/packages
-	#cd $(CURRENT_DIR)/extras/sample-package; abuild -r -P $(CURRENT_DIR)/packages
+	@echo "Building extra packages..."
+	@echo
+	mkdir -p $(CURRENT_DIR)/packages
+	cd $(CURRENT_DIR)/extras/ruby-debug; abuild -r -P $(CURRENT_DIR)/packages
+	cd $(CURRENT_DIR)/extras/ruby-net-imap; abuild -r -P $(CURRENT_DIR)/packages
+	cd $(CURRENT_DIR)/extras/ruby-rbs; abuild -r -P $(CURRENT_DIR)/packages
+	cd $(CURRENT_DIR)
 	@echo "Building ISO..."
 	@echo "Output directory:" $(OUTPUT_DIR)
 	@echo
 	mkdir -p $(OUTPUT_DIR)
-	## add '--repository $(CURRENT_DIR)/packages/extras' for local repository.
 	sh mkimage.sh \
 		--outdir $(OUTPUT_DIR) \
 		--tag $(ALPINE_LINUX_TAG) \
+		--repository $(CURRENT_DIR)/packages/extras \
 		--repository "$(ALPINE_LINUX_REPO_EDGE)" \
 		--repository "$(ALPINE_LINUX_REPO_EDGE_COMMUNITY)" \
 		--repository "$(ALPINE_LINUX_REPO_TESTING)"

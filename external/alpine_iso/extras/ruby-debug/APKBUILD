@@ -1,0 +1,79 @@
+# Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+pkgname=ruby-debug
+_gemname=debug
+# Keep version in sync with "Bundled gems" (https://stdgems.org) for the
+# packaged Ruby version.
+pkgver=1.9.1
+pkgrel=0
+pkgdesc="Debugging functionality for Ruby"
+url="https://github.com/ruby/debug"
+arch="all"
+license="BSD-2-Clause AND Ruby"
+depends="ruby"
+checkdepends="
+	ruby-rake
+	ruby-test-unit
+	ruby-test-unit-rr
+	"
+makedepends="ruby-dev ruby-rdoc"
+subpackages="$pkgname-doc"
+source="https://github.com/ruby/debug/archive/v$pkgver/$_gemname-$pkgver.tar.gz
+	gemspec.patch
+	"
+builddir="$srcdir/$_gemname-$pkgver"
+
+prepare() {
+	default_prepare
+	sed -i '/require .bundler/d' Rakefile
+}
+
+build() {
+	gem build $_gemname.gemspec
+
+	gem install \
+		--local \
+		--install-dir dist \
+		--bindir dist/bin \
+		--ignore-dependencies \
+		--document ri \
+		--verbose \
+		$_gemname
+}
+
+check() {
+	export RUBY_DEBUG_TEST_NO_REMOTE=1
+	# XXX: This test fails on GitLab CI, but passes locally.
+	export TESTOPTS="--ignore-name=/^test_list_socks$/"
+
+	GEM_PATH='dist' rake test
+}
+
+package() {
+	local gemdir="$pkgdir/$(ruby -e 'puts Gem.default_dir')"
+
+	cd "$builddir"/dist
+
+	mkdir -p "$gemdir"
+	cp -r doc extensions gems specifications "$gemdir"/
+
+	mkdir -p "$pkgdir"/usr/bin
+	cp -r bin/* "$pkgdir"/usr/bin/
+
+	# Remove unnecessary files and rubbish...
+	find "$gemdir"/extensions/ -name mkmf.log -delete
+
+	cd "$gemdir"/gems/$_gemname-$pkgver
+	rm -r ext/
+}
+
+doc() {
+	pkgdesc="$pkgdesc (ri docs)"
+
+	amove "$(ruby -e 'puts Gem.default_dir')"/doc
+}
+
+sha512sums="
+eefd074968af7032410f62a0a37792fb261b3d7c1cc759d1838016bcc264baa1f205c935d76f4a8aed7ea892698d80de7db48fba1e0efd067b9b1bac9577be66  debug-1.9.1.tar.gz
+7d08028768c0a5024b32d1254f131204610db68f4ecbd72cca0677f499c5e426fba079e65a127453ca1d9685b094cb8feeddaa27bce72821e03a73e3f2bf5244  gemspec.patch
+"
