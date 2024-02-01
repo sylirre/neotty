@@ -205,9 +205,11 @@ jobs:
 
   publish:
     name: Publish release
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
     needs: [app]
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
