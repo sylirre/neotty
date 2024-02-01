@@ -4,17 +4,17 @@ on:
   #pull_request:
   #  types: [opened, synchronize]
   push:
-    branches:
-      - main
-      - development
-    paths:
-      - .github/workflows/*
-      - app/**
-      - external/alpine_iso/**
-      - external/libqemu-jni/**
-      - gradle/**
-      - gradle*
-      - ./*.gradle
+    #branches:
+    #  - main
+    #  - development
+    #paths:
+    #  - .github/workflows/*
+    #  - app/**
+    #  - external/alpine_iso/**
+    #  - external/libqemu-jni/**
+    #  - gradle/**
+    #  - gradle*
+    #  - ./*.gradle
     tags:
       - '*'
   workflow_dispatch:
