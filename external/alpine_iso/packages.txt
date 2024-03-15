@@ -590,7 +590,8 @@ kmod-bash-completion
 kmod-dev
 kmod-doc
 kmod-libs
-kmod-openrc
+kopia
+kopia-bash-completion
 lame
 lame-dev
 lame-doc
@@ -756,7 +757,6 @@ libjpeg-turbo-utils
 libjxl
 libjxl-dev
 libjxl-doc
-libjxl-static
 libjxl-tools
 libksba
 libksba-dev
