@@ -1,23 +1,9 @@
 name: Application
 
 on:
-  #pull_request:
-  #  types: [opened, synchronize]
   push:
-    #branches:
-    #  - main
-    #  - development
-    #paths:
-    #  - .github/workflows/*
-    #  - app/**
-    #  - external/alpine_iso/**
-    #  - external/libqemu-jni/**
-    #  - gradle/**
-    #  - gradle*
-    #  - ./*.gradle
     tags:
       - '*'
-  workflow_dispatch:
 
 jobs:
   gradle-wrapper-check:
@@ -123,6 +109,8 @@ jobs:
     name: Build application
     needs: [libqemu-jni, system-image, terminal-tests]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -196,33 +184,6 @@ jobs:
           fi
         env:
           KEY_PASSPHRASE: "${{ secrets.ANDROID_KEY_PASSPHRASE }}"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: NeoTTY-git-${{ steps.build-id.outputs.git_rev }}
-          path: ./artifacts/
-
-  publish:
-    name: Publish release
-    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
-    needs: [app]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Get build id
-        id: build-id
-        run: echo "::set-output name=git_rev::$(git rev-parse --short HEAD)"
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: NeoTTY-git-${{ steps.build-id.outputs.git_rev }}
-          path: ./artifacts/
 
       - name: Publish release
         if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
