@@ -25,8 +25,9 @@ will not be processed.*
 once in a long while.*
 
 **If you find NeoTTY useful, please consider supporting developer by making a
-donation using Litecoin, Ethereum or Tron cryptocurrency:**
+donation using cryptocurrency:**
 
+* Bitcoin: `bc1qp4paa22t8l2apwfuujp6des6e90p7lm8zmhd7s`
 * Litecoin: `ltc1q2yne7e2p5ypf2ky0j3tg3vd6yktd5u57rmlly9`
 * Ethereum: `0x76c7f1FC3C7396396fBD7e8cBDc2fc741FFa4aFa`
 * Tron: `TUP941DmHfrBNxvbcYkThx9hHrskU7FyTa`
@@ -42,14 +43,54 @@ actions.
 Few ideas to get started:
 
 - Explore the world of Linux and Open Source Software =)
-- Build own programs
-- Host a local web application
-- Access remote server using SSH
+
+  NeoTTY provides you a playground with a full-fledged Linux installation.
+  If broke something, just reset the app and begin with fresh environment.
+  Your changes won't affect host device.
+
+- Build own programs with ASM, C, C++, Go, Java, Node.js, Python, Rust, etc
+
+  Program with ASM, C, C++, Go, Java, Node.js, Python, Rust or any other
+  language you want. The most common build tools are available in Alpine
+  Linux repositories. If not, you can try compiling them from source.
+
+- Host a dockerized web application
+
+  Experiments confirmed that one can host a complex web application inside
+  QEMU on mobile device with enough performance for 1 - 3 users.
+
+  Although with something like NextCloud performance lags are expected.
+
+- Access remote servers
+
+  Easily SSH into remote server or mount cloud storage as local directory.
+  All necessary software is available.
+
 - Do hacking of any kind (except where hardware access required)
+
+  Pentesting, reverse engineering... you know
+
+  However access to real hardware is disabled by design and will never be
+  implemented. Don't try to use NeoTTY to root your Android device or
+  access USB dongles. This isn't going to work.
+
 - Hide content on LUKS encrypted volume
 
+  Although there is no 100% proof, the NeoTTY app should be fully resistant to
+  possible user data proactive scanning that can be initiated by Google
+  or manufacturer if they would be obligated by ~~piece of paper~~ law.
+
+  Beware of forensics guys. They are triggered by presence of encryption
+  rather than by actual content. Keep your device away from third party
+  persons (applicable even if you are not user of NeoTTY :)).
+
 Many common packages are bundled within intergated [Alpine Linux] ISO file to
-make the NeoTTY suitable for offline use in air gapped conditions.
+make the NeoTTY suitable for offline use and make it self-sufficient in SHTF
+conditions. This includes basic system utilities; software build tools such
+as compilers, interpreters and development libraries; text editors; archivers
+and compressors; encryption utilities; backup utilities; media file format
+utilities. APK file size expected to be unusually big but I tend to keep it
+around 2GB.
 
 ![screenshot](/images/neotty_preview.png)
 
